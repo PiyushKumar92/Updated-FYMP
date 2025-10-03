@@ -1,0 +1,387 @@
+{% extends "base.html" %}
+
+{% block title %}Analysis Results - {{ case.person_name }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h2 class="text-primary mb-1">
+                        <i class="fas fa-brain me-2"></i>AI Analysis Results
+                    </h2>
+                    <p class="text-muted mb-0">Detailed analysis results for {{ case.person_name }} - Case #{{ case.id }}</p>
+                </div>
+                <div class="btn-group">
+                    <a href="{{ url_for('admin.case_review', case_id=case.id) }}" class="btn btn-outline-secondary">
+                        <i class="fas fa-arrow-left me-2"></i>Back to Case
+                    </a>
+                    <button class="btn btn-primary" onclick="exportResults()">
+                        <i class="fas fa-download me-2"></i>Export Results
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Summary Cards -->
+    <div class="row mb-4">
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h3 class="mb-0">{{ matches_with_detections|length }}</h3>
+                            <p class="mb-0">Footage Analyzed</p>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-video fa-2x opacity-75"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card bg-success text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            {% set positive_matches = matches_with_detections | selectattr('detections') | list %}
+                            <h3 class="mb-0">{{ positive_matches|length }}</h3>
+                            <p class="mb-0">Positive Matches</p>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-check-circle fa-2x opacity-75"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card bg-info text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            {% set total_detections = matches_with_detections | sum(attribute='detections') | length %}
+                            <h3 class="mb-0">{{ total_detections }}</h3>
+                            <p class="mb-0">Total Detections</p>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-search fa-2x opacity-75"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card bg-warning text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            {% set high_conf_detections = [] %}
+                            {% for match_data in matches_with_detections %}
+                                {% for detection in match_data.detections %}
+                                    {% if detection.confidence_score > 0.8 %}
+                                        {% set _ = high_conf_detections.append(detection) %}
+                                    {% endif %}
+                                {% endfor %}
+                            {% endfor %}
+                            <h3 class="mb-0">{{ high_conf_detections|length }}</h3>
+                            <p class="mb-0">High Confidence</p>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-star fa-2x opacity-75"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Analysis Results -->
+    {% for match_data in matches_with_detections %}
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h5 class="mb-0">
+                                <i class="fas fa-video me-2"></i>{{ match_data.footage.title }}
+                            </h5>
+                            <small class="text-muted">{{ match_data.footage.location_name }} • {{ match_data.footage.formatted_duration }}</small>
+                        </div>
+                        <div>
+                            <span class="badge bg-{{ 'success' if match_data.detections else 'secondary' }} me-2">
+                                {{ match_data.detections|length }} detections
+                            </span>
+                            <span class="badge bg-info">
+                                Match Score: {{ "%.1f"|format(match_data.match.match_score * 100) }}%
+                            </span>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body">
+                    {% if match_data.detections %}
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <div class="card bg-light">
+                                <div class="card-body">
+                                    <h6 class="text-primary mb-3">Footage Information</h6>
+                                    <table class="table table-sm table-borderless">
+                                        <tr>
+                                            <td><strong>Location:</strong></td>
+                                            <td>{{ match_data.footage.location_name }}</td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Duration:</strong></td>
+                                            <td>{{ match_data.footage.formatted_duration }}</td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Quality:</strong></td>
+                                            <td>{{ match_data.footage.quality }}</td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Camera Type:</strong></td>
+                                            <td>{{ match_data.footage.camera_type }}</td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Analysis Status:</strong></td>
+                                            <td>
+                                                <span class="badge bg-{{ 'success' if match_data.match.status == 'completed' else 'warning' }}">
+                                                    {{ match_data.match.status.title() }}
+                                                </span>
+                                            </td>
+                                        </tr>
+                                    </table>
+                                    
+                                    <div class="mt-3">
+                                        <a href="{{ url_for('static', filename=match_data.footage.video_path) }}" 
+                                           target="_blank" class="btn btn-sm btn-primary">
+                                            <i class="fas fa-play me-2"></i>Play Original Video
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-8">
+                            <h6 class="text-primary mb-3">Detection Timeline</h6>
+                            <div class="detection-timeline">
+                                {% for detection in match_data.detections %}
+                                <div class="detection-item mb-3 p-3 border rounded">
+                                    <div class="row align-items-center">
+                                        <div class="col-md-3">
+                                            {% if detection.frame_path %}
+                                            <img src="{{ url_for('static', filename=detection.frame_path) }}" 
+                                                 class="img-fluid rounded detection-frame" 
+                                                 onclick="showFrameModal('{{ url_for('static', filename=detection.frame_path) }}', '{{ detection.formatted_timestamp }}')">
+                                            {% else %}
+                                            <div class="bg-light rounded d-flex align-items-center justify-content-center" 
+                                                 style="height: 120px;">
+                                                <i class="fas fa-image fa-2x text-muted"></i>
+                                            </div>
+                                            {% endif %}
+                                        </div>
+                                        <div class="col-md-9">
+                                            <div class="row">
+                                                <div class="col-md-6">
+                                                    <h6 class="mb-2">
+                                                        <i class="fas fa-clock me-2"></i>{{ detection.formatted_timestamp }}
+                                                        <small class="text-muted">({{ "%.1f"|format(detection.timestamp) }}s)</small>
+                                                    </h6>
+                                                    <div class="mb-2">
+                                                        <strong>Overall Confidence:</strong>
+                                                        <div class="progress confidence-bar mt-1">
+                                                            <div class="progress-bar bg-{{ 'success' if detection.confidence_score > 0.8 else 'warning' if detection.confidence_score > 0.6 else 'danger' }}" 
+                                                                 style="width: {{ (detection.confidence_score * 100)|round }}%">
+                                                                {{ "%.1f"|format(detection.confidence_score * 100) }}%
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <div class="detection-scores">
+                                                        {% if detection.face_match_score %}
+                                                        <div class="mb-1">
+                                                            <small class="text-muted">Face Match:</small>
+                                                            <span class="badge bg-{{ 'success' if detection.face_match_score > 0.8 else 'warning' if detection.face_match_score > 0.6 else 'danger' }}">
+                                                                {{ "%.1f"|format(detection.face_match_score * 100) }}%
+                                                            </span>
+                                                        </div>
+                                                        {% endif %}
+                                                        {% if detection.clothing_match_score %}
+                                                        <div class="mb-1">
+                                                            <small class="text-muted">Clothing Match:</small>
+                                                            <span class="badge bg-{{ 'success' if detection.clothing_match_score > 0.8 else 'warning' if detection.clothing_match_score > 0.6 else 'danger' }}">
+                                                                {{ "%.1f"|format(detection.clothing_match_score * 100) }}%
+                                                            </span>
+                                                        </div>
+                                                        {% endif %}
+                                                        <div class="mb-1">
+                                                            <small class="text-muted">Method:</small>
+                                                            <span class="badge bg-info">{{ detection.analysis_method or 'Unknown' }}</span>
+                                                        </div>
+                                                        <div class="mb-1">
+                                                            <small class="text-muted">Status:</small>
+                                                            {% if detection.verified %}
+                                                            <span class="badge bg-success">
+                                                                <i class="fas fa-check me-1"></i>Verified
+                                                            </span>
+                                                            {% else %}
+                                                            <span class="badge bg-warning">
+                                                                <i class="fas fa-clock me-1"></i>Pending Review
+                                                            </span>
+                                                            {% endif %}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            
+                                            {% if detection.notes %}
+                                            <div class="mt-2">
+                                                <small class="text-muted">Notes:</small>
+                                                <p class="mb-0">{{ detection.notes }}</p>
+                                            </div>
+                                            {% endif %}
+                                            
+                                            <div class="mt-2">
+                                                {% if not detection.verified %}
+                                                <button class="btn btn-sm btn-success me-2" onclick="verifyDetection({{ detection.id }}, true)">
+                                                    <i class="fas fa-check me-1"></i>Verify
+                                                </button>
+                                                <button class="btn btn-sm btn-danger me-2" onclick="verifyDetection({{ detection.id }}, false)">
+                                                    <i class="fas fa-times me-1"></i>Reject
+                                                </button>
+                                                {% endif %}
+                                                <button class="btn btn-sm btn-outline-primary" onclick="addDetectionNote({{ detection.id }})">
+                                                    <i class="fas fa-comment me-1"></i>Add Note
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-search fa-3x text-muted mb-3"></i>
+                        <h5 class="text-muted">No detections found in this footage</h5>
+                        <p class="text-muted">The AI analysis did not detect the missing person in this surveillance video.</p>
+                        <button class="btn btn-outline-primary" onclick="reprocessFootage({{ match_data.match.id }})">
+                            <i class="fas fa-redo me-2"></i>Reprocess Analysis
+                        </button>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+
+    {% if not matches_with_detections %}
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body text-center py-5">
+                    <i class="fas fa-brain fa-3x text-muted mb-3"></i>
+                    <h5 class="text-muted">No analysis results available</h5>
+                    <p class="text-muted">No AI analysis has been performed for this case yet.</p>
+                    <a href="{{ url_for('admin.case_review', case_id=case.id) }}" class="btn btn-primary">
+                        <i class="fas fa-arrow-left me-2"></i>Go Back to Case Review
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Frame Modal -->
+<div class="modal fade" id="frameModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Detection Frame - <span id="frameTimestamp"></span></h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body text-center">
+                <img id="frameImage" src="" class="img-fluid">
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function showFrameModal(imageSrc, timestamp) {
+    document.getElementById('frameImage').src = imageSrc;
+    document.getElementById('frameTimestamp').textContent = timestamp;
+    new bootstrap.Modal(document.getElementById('frameModal')).show();
+}
+
+function verifyDetection(detectionId, isValid) {
+    const action = isValid ? 'verify' : 'reject';
+    if (confirm(`${isValid ? 'Verify' : 'Reject'} this detection?`)) {
+        fetch(`/admin/detection/${detectionId}/${action}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert('Error: ' + data.error);
+            }
+        });
+    }
+}
+
+function addDetectionNote(detectionId) {
+    const note = prompt('Add a note for this detection:');
+    if (note) {
+        fetch(`/admin/detection/${detectionId}/note`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+            },
+            body: JSON.stringify({note: note})
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert('Error: ' + data.error);
+            }
+        });
+    }
+}
+
+function reprocessFootage(matchId) {
+    if (confirm('Reprocess AI analysis for this footage?')) {
+        fetch(`/admin/ai-analysis/${matchId}/reprocess`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+            }
+        }).then(() => {
+            alert('Reprocessing started. Please check back in a few minutes.');
+            location.reload();
+        });
+    }
+}
+
+function exportResults() {
+    window.location.href = `/admin/cases/{{ case.id }}/export-results`;
+}
+</script>
+{% endblock %}

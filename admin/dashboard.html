@@ -1,0 +1,436 @@
+{% extends "base.html" %}
+
+{% block title %}Admin Dashboard - Missing Person Finder{% endblock %}
+
+{% block content %}
+<!-- Professional Admin Header -->
+<div class="admin-header">
+    <div class="container">
+        <div class="admin-header-content">
+            <div class="admin-header-text">
+                <div class="admin-badge">
+                    <i class="fas fa-shield-alt"></i>
+                    <span>Administrator Panel</span>
+                </div>
+                <h1>Advanced Admin Dashboard</h1>
+                <p>Complete platform oversight, user management, and system analytics</p>
+            </div>
+            <div class="admin-header-actions">
+                <div class="admin-status">
+                    <div class="admin-quick-stats">
+                        <div class="quick-stat">
+                            <div class="stat-value">{{ total_cases or 0 }}</div>
+                            <div class="stat-label">Total Cases</div>
+                        </div>
+                        <div class="quick-stat">
+                            <div class="stat-value">{{ active_users or 0 }}</div>
+                            <div class="stat-label">Active Users</div>
+                        </div>
+                        <div class="quick-stat">
+                            <div class="stat-value">{{ total_sightings or 0 }}</div>
+                            <div class="stat-label">AI Matches</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="container">
+    <!-- Professional Quick Actions -->
+    <div class="admin-quick-actions">
+        <a href="{{ url_for('admin.users') }}" class="admin-action-card primary">
+            <div class="action-icon">
+                <i class="fas fa-users"></i>
+            </div>
+            <div class="action-content">
+                <h3>User Management</h3>
+                <p>Manage user accounts, permissions, and access control</p>
+                <div class="action-stats">
+                    <span class="stat-number">{{ total_users or 0 }}</span>
+                    <span class="stat-label">Total Users</span>
+                </div>
+            </div>
+            <div class="action-arrow">
+                <i class="fas fa-arrow-right"></i>
+            </div>
+        </a>
+        
+
+        <a href="{{ url_for('admin.analytics') }}" class="admin-action-card success">
+            <div class="action-icon">
+                <i class="fas fa-chart-line"></i>
+            </div>
+            <div class="action-content">
+                <h3>Analytics & Reports</h3>
+                <p>View detailed platform analytics and performance metrics</p>
+                <div class="action-stats">
+                    <span class="stat-number">{{ total_sightings or 0 }}</span>
+                    <span class="stat-label">AI Sightings</span>
+                </div>
+            </div>
+            <div class="action-arrow">
+                <i class="fas fa-arrow-right"></i>
+            </div>
+        </a>
+        
+        <a href="{{ url_for('admin.contact_messages') }}" class="admin-action-card warning">
+            <div class="action-icon">
+                <i class="fas fa-envelope"></i>
+            </div>
+            <div class="action-content">
+                <h3>Contact Messages</h3>
+                <p>Handle user contact form messages and support requests</p>
+                <div class="action-stats">
+                    <span class="stat-number">{{ unread_messages or 0 }}</span>
+                    <span class="stat-label">Unread</span>
+                </div>
+            </div>
+            <div class="action-arrow">
+                <i class="fas fa-arrow-right"></i>
+            </div>
+        </a>
+        
+        <a href="{{ url_for('main.chat_list') }}" class="admin-action-card info">
+            <div class="action-icon">
+                <i class="fas fa-comments"></i>
+            </div>
+            <div class="action-content">
+                <h3>Live Chat</h3>
+                <p>Real-time chat with users for instant support</p>
+                <div class="action-stats">
+                    <span class="stat-number">{{ active_chats or 0 }}</span>
+                    <span class="stat-label">Active</span>
+                </div>
+            </div>
+            <div class="action-arrow">
+                <i class="fas fa-arrow-right"></i>
+            </div>
+        </a>
+        
+        <a href="{{ url_for('admin.announcements') }}" class="admin-action-card danger">
+            <div class="action-icon">
+                <i class="fas fa-bullhorn"></i>
+            </div>
+            <div class="action-content">
+                <h3>Announcements</h3>
+                <p>Create and manage platform-wide announcements</p>
+                <div class="action-stats">
+                    <span class="stat-number">{{ active_announcements or 0 }}</span>
+                    <span class="stat-label">Active</span>
+                </div>
+            </div>
+            <div class="action-arrow">
+                <i class="fas fa-arrow-right"></i>
+            </div>
+        </a>
+        
+        <a href="{{ url_for('admin.ai_settings') }}" class="admin-action-card dark">
+            <div class="action-icon">
+                <i class="fas fa-cogs"></i>
+            </div>
+            <div class="action-content">
+                <h3>AI Configuration</h3>
+                <p>Configure AI models, thresholds, and processing settings</p>
+                <div class="action-stats">
+                    <span class="stat-number">95%</span>
+                    <span class="stat-label">Accuracy</span>
+                </div>
+            </div>
+            <div class="action-arrow">
+                <i class="fas fa-arrow-right"></i>
+            </div>
+        </a>
+        
+        <a href="{{ url_for('admin.system_status') }}" class="admin-action-card info">
+            <div class="action-icon">
+                <i class="fas fa-heartbeat"></i>
+            </div>
+            <div class="action-content">
+                <h3>System Status</h3>
+                <p>Monitor system health, performance, and component status</p>
+                <div class="action-stats">
+                    <span class="stat-number">Online</span>
+                    <span class="stat-label">Status</span>
+                </div>
+            </div>
+            <div class="action-arrow">
+                <i class="fas fa-arrow-right"></i>
+            </div>
+        </a>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3 mb-3">
+            <div class="card stat-card text-center">
+                <div class="card-body">
+                    <div class="stat-icon mx-auto" style="background: var(--primary); color: white;">
+                        <i class="fas fa-users"></i>
+                    </div>
+                    <h3 class="text-primary mb-1">{{ total_users }}</h3>
+                    <p class="text-muted mb-0">Total Users</p>
+                    <small class="text-success">{{ active_users }} active</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card stat-card text-center">
+                <div class="card-body">
+                    <div class="stat-icon mx-auto" style="background: var(--info); color: white;">
+                        <i class="fas fa-folder-open"></i>
+                    </div>
+                    <h3 class="text-info mb-1">{{ total_cases }}</h3>
+                    <p class="text-muted mb-0">Total Cases</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card stat-card text-center">
+                <div class="card-body">
+                    <div class="stat-icon mx-auto" style="background: var(--success); color: white;">
+                        <i class="fas fa-eye"></i>
+                    </div>
+                    <h3 class="text-success mb-1">{{ total_sightings }}</h3>
+                    <p class="text-muted mb-0">AI Sightings</p>
+                    <small class="text-success">{{ high_confidence_matches }} high confidence</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card stat-card text-center">
+                <div class="card-body">
+                    <div class="stat-icon mx-auto" style="background: var(--warning); color: white;">
+                        <i class="fas fa-clock"></i>
+                    </div>
+                    <h3 class="text-warning mb-1">{{ "%.1f"|format(avg_processing_time/60) }}m</h3>
+                    <p class="text-muted mb-0">Avg Processing</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Contact Messages -->
+    {% if recent_contact_messages %}
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="fas fa-envelope me-2"></i>Recent Contact Messages</h5>
+                    <a href="{{ url_for('admin.contact_messages') }}" class="btn btn-sm btn-primary">View All</a>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Subject</th>
+                                    <th>Email</th>
+                                    <th>Date</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for message in recent_contact_messages %}
+                                {% if message %}
+                                <tr class="{% if not message.is_read %}table-warning{% endif %}">
+                                    <td><strong>{{ message.name }}</strong></td>
+                                    <td>{{ message.subject }}</td>
+                                    <td>{{ message.email }}</td>
+                                    <td>{{ message.created_at.strftime('%m/%d %H:%M') }}</td>
+                                    <td>
+                                        {% if message.is_read %}
+                                            <span class="badge bg-success">Read</span>
+                                        {% else %}
+                                            <span class="badge bg-warning">Unread</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endif %}
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Recent Cases & AI Analysis -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="fas fa-list me-2"></i>Recent Cases & AI Analysis</h5>
+                    <a href="{{ url_for('admin.cases') }}" class="btn btn-sm btn-primary">View All Cases</a>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Photo</th>
+                                    <th>Person Name</th>
+                                    <th>Location</th>
+                                    <th>Status</th>
+                                    <th>AI Matches</th>
+                                    <th>Detections</th>
+                                    <th>Created</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for case in recent_cases %}
+                                {% if case %}
+                                <tr>
+                                    <td>
+                                        {% if case.target_images %}
+                                            <img src="{{ url_for('static', filename=case.target_images[0].image_path) }}" 
+                                                 alt="{{ case.person_name }}" 
+                                                 class="case-photo rounded-circle" 
+                                                 style="width: 50px; height: 50px; object-fit: cover; border: 2px solid #e5e7eb;">
+                                        {% else %}
+                                            <div class="case-photo-placeholder rounded-circle d-flex align-items-center justify-content-center" 
+                                                 style="width: 50px; height: 50px; background: #f3f4f6; border: 2px solid #e5e7eb; color: #9ca3af;">
+                                                <i class="fas fa-user"></i>
+                                            </div>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <strong>{{ case.person_name }}</strong>
+                                        <br><small class="text-muted">Age: {{ case.age or 'Unknown' }}</small>
+                                    </td>
+                                    <td>
+                                        <span class="text-muted">{{ case.last_seen_location or 'Not specified' }}</span>
+                                    </td>
+                                    <td>
+                                        {% if case.status == 'Active' %}
+                                            <span class="badge bg-success">{{ case.status }}</span>
+                                        {% elif case.status == 'Processing' %}
+                                            <span class="badge bg-warning">{{ case.status }}</span>
+                                        {% elif case.status == 'Queued' %}
+                                            <span class="badge bg-info">{{ case.status }}</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">{{ case.status }}</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-primary">{{ case.location_matches|length }}</span>
+                                        {% if case.location_matches %}
+                                            <br><small class="text-success">{{ case.location_matches|selectattr('person_found', 'equalto', true)|list|length }} found</small>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% set total_detections = case.location_matches|sum(attribute='detection_count') %}
+                                        {% if total_detections > 0 %}
+                                            <span class="badge bg-success">{{ total_detections }}</span>
+                                        {% else %}
+                                            <span class="badge bg-light text-dark">0</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <small class="text-muted">{{ case.created_at.strftime('%m/%d %H:%M') }}</small>
+                                    </td>
+                                    <td>
+                                        <a href="{{ url_for('admin.case_detail', case_id=case.id) }}" class="btn btn-sm btn-outline-primary">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% endif %}
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts and Analytics -->
+    <div class="row">
+        <div class="col-md-6">
+            <div class="card chart-card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">📊 Case Status Distribution</h5>
+                    <a href="{{ url_for('admin.export_cases') }}" class="btn btn-sm btn-outline-primary">
+                        <i class="fas fa-download"></i> Export
+                    </a>
+                </div>
+                <div class="card-body">
+                    <canvas id="statusChart" height="200"></canvas>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card chart-card">
+                <div class="card-header">
+                    <h5 class="mb-0">📈 Cases Over Time (30 Days)</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="timeChart" height="200"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+// Enhanced Status Chart
+const statusData = {
+    labels: [{% for status, count in status_counts %}'{{ status }}'{% if not loop.last %},{% endif %}{% endfor %}],
+    datasets: [{
+        data: [{% for status, count in status_counts %}{{ count }}{% if not loop.last %},{% endif %}{% endfor %}],
+        backgroundColor: ['#6b7280', '#f59e0b', '#10b981', '#ef4444', '#3b82f6'],
+        borderWidth: 0
+    }]
+};
+
+new Chart(document.getElementById('statusChart'), {
+    type: 'doughnut',
+    data: statusData,
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: { position: 'bottom' }
+        }
+    }
+});
+
+// Enhanced Time Chart
+const timeData = {
+    labels: [{% for date, count in daily_cases %}'{{ date if date else "" }}'{% if not loop.last %},{% endif %}{% endfor %}],
+    datasets: [{
+        label: 'Cases Created',
+        data: [{% for date, count in daily_cases %}{{ count }}{% if not loop.last %},{% endif %}{% endfor %}],
+        borderColor: '#4f46e5',
+        backgroundColor: 'rgba(79, 70, 229, 0.1)',
+        tension: 0.4,
+        fill: true
+    }]
+};
+
+new Chart(document.getElementById('timeChart'), {
+    type: 'line',
+    data: timeData,
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+            y: { beginAtZero: true }
+        },
+        plugins: {
+            legend: { display: false }
+        }
+    }
+});
+</script>
+
+{% endblock %}

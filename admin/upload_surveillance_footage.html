@@ -1,0 +1,259 @@
+{% extends "base.html" %}
+
+{% block title %}Upload Surveillance Footage{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <!-- Header -->
+            <div class="text-center mb-4">
+                <h2 class="text-primary mb-2">
+                    <i class="fas fa-upload me-2"></i>Upload Surveillance Footage
+                </h2>
+                <p class="text-muted">Add CCTV footage for AI-powered missing person analysis</p>
+            </div>
+
+            <!-- Upload Form -->
+            <div class="card shadow">
+                <div class="card-body p-4">
+                    <form method="POST" enctype="multipart/form-data" id="uploadForm">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                        
+                        <!-- Basic Information -->
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <h5 class="text-primary mb-3">
+                                    <i class="fas fa-info-circle me-2"></i>Basic Information
+                                </h5>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="title" class="form-label">Footage Title *</label>
+                                <input type="text" class="form-control" id="title" name="title" required 
+                                       placeholder="e.g., Main Street CCTV - Camera 1">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="camera_type" class="form-label">Camera Type</label>
+                                <select class="form-select" id="camera_type" name="camera_type">
+                                    <option value="CCTV">CCTV</option>
+                                    <option value="Security">Security Camera</option>
+                                    <option value="Traffic">Traffic Camera</option>
+                                    <option value="Surveillance">Surveillance Camera</option>
+                                    <option value="Other">Other</option>
+                                </select>
+                            </div>
+                            <div class="col-12 mb-3">
+                                <label for="description" class="form-label">Description</label>
+                                <textarea class="form-control" id="description" name="description" rows="3"
+                                          placeholder="Brief description of the footage content and context"></textarea>
+                            </div>
+                        </div>
+
+                        <!-- Location Information -->
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <h5 class="text-primary mb-3">
+                                    <i class="fas fa-map-marker-alt me-2"></i>Location Information
+                                </h5>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="location_name" class="form-label">Location Name *</label>
+                                <input type="text" class="form-control" id="location_name" name="location_name" required
+                                       placeholder="e.g., Main Street Junction">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="quality" class="form-label">Video Quality</label>
+                                <select class="form-select" id="quality" name="quality">
+                                    <option value="SD">SD (480p)</option>
+                                    <option value="HD" selected>HD (720p)</option>
+                                    <option value="FHD">Full HD (1080p)</option>
+                                    <option value="4K">4K (2160p)</option>
+                                </select>
+                            </div>
+                            <div class="col-12 mb-3">
+                                <label for="location_address" class="form-label">Full Address</label>
+                                <input type="text" class="form-control" id="location_address" name="location_address"
+                                       placeholder="Complete address of the camera location">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="latitude" class="form-label">Latitude</label>
+                                <input type="number" step="any" class="form-control" id="latitude" name="latitude"
+                                       placeholder="e.g., 28.6139">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="longitude" class="form-label">Longitude</label>
+                                <input type="number" step="any" class="form-control" id="longitude" name="longitude"
+                                       placeholder="e.g., 77.2090">
+                            </div>
+                        </div>
+
+                        <!-- Video Information -->
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <h5 class="text-primary mb-3">
+                                    <i class="fas fa-video me-2"></i>Video Information
+                                </h5>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="date_recorded" class="form-label">Date & Time Recorded</label>
+                                <input type="datetime-local" class="form-control" id="date_recorded" name="date_recorded">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="video_file" class="form-label">Video File *</label>
+                                <input type="file" class="form-control" id="video_file" name="video_file" 
+                                       accept="video/*" required onchange="handleFileSelect(this)">
+                                <div class="form-text">Supported formats: MP4, AVI, MOV, MKV (Max: 500MB)</div>
+                            </div>
+                        </div>
+
+                        <!-- File Preview -->
+                        <div id="filePreview" class="mb-4" style="display: none;">
+                            <h5 class="text-primary mb-3">
+                                <i class="fas fa-eye me-2"></i>File Preview
+                            </h5>
+                            <div class="card bg-light">
+                                <div class="card-body">
+                                    <div class="row align-items-center">
+                                        <div class="col-md-8">
+                                            <div id="fileInfo"></div>
+                                        </div>
+                                        <div class="col-md-4 text-end">
+                                            <video id="videoPreview" width="200" height="150" controls style="display: none;">
+                                                Your browser does not support the video tag.
+                                            </video>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Submit Buttons -->
+                        <div class="row">
+                            <div class="col-12">
+                                <div class="d-flex justify-content-between">
+                                    <a href="{{ url_for('admin.surveillance_footage') }}" class="btn btn-outline-secondary">
+                                        <i class="fas fa-arrow-left me-2"></i>Back to Footage
+                                    </a>
+                                    <div>
+                                        <button type="reset" class="btn btn-outline-warning me-2">
+                                            <i class="fas fa-undo me-2"></i>Reset Form
+                                        </button>
+                                        <button type="submit" class="btn btn-primary" id="submitBtn">
+                                            <i class="fas fa-upload me-2"></i>Upload Footage
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Upload Progress -->
+            <div id="uploadProgress" class="card mt-4" style="display: none;">
+                <div class="card-body">
+                    <h6 class="mb-3">Upload Progress</h6>
+                    <div class="progress mb-2">
+                        <div class="progress-bar progress-bar-striped progress-bar-animated" 
+                             role="progressbar" style="width: 0%"></div>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                        <small class="text-muted">Uploading...</small>
+                        <small class="text-muted" id="progressText">0%</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function handleFileSelect(input) {
+    const file = input.files[0];
+    if (file) {
+        const filePreview = document.getElementById('filePreview');
+        const fileInfo = document.getElementById('fileInfo');
+        const videoPreview = document.getElementById('videoPreview');
+        
+        // Show file information
+        const fileSize = (file.size / (1024 * 1024)).toFixed(2);
+        fileInfo.innerHTML = `
+            <h6 class="mb-2">${file.name}</h6>
+            <div class="row">
+                <div class="col-sm-6">
+                    <small class="text-muted">Size: ${fileSize} MB</small>
+                </div>
+                <div class="col-sm-6">
+                    <small class="text-muted">Type: ${file.type}</small>
+                </div>
+            </div>
+        `;
+        
+        // Show video preview
+        const url = URL.createObjectURL(file);
+        videoPreview.src = url;
+        videoPreview.style.display = 'block';
+        
+        filePreview.style.display = 'block';
+        
+        // Validate file size
+        if (file.size > 500 * 1024 * 1024) { // 500MB
+            alert('File size exceeds 500MB limit. Please choose a smaller file.');
+            input.value = '';
+            filePreview.style.display = 'none';
+        }
+    }
+}
+
+// Get current location
+function getCurrentLocation() {
+    if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(function(position) {
+            document.getElementById('latitude').value = position.coords.latitude.toFixed(6);
+            document.getElementById('longitude').value = position.coords.longitude.toFixed(6);
+        });
+    }
+}
+
+// Add location button
+document.addEventListener('DOMContentLoaded', function() {
+    const latInput = document.getElementById('latitude');
+    const locationBtn = document.createElement('button');
+    locationBtn.type = 'button';
+    locationBtn.className = 'btn btn-outline-primary btn-sm mt-2';
+    locationBtn.innerHTML = '<i class="fas fa-location-arrow me-1"></i>Get Current Location';
+    locationBtn.onclick = getCurrentLocation;
+    latInput.parentNode.appendChild(locationBtn);
+});
+
+// Form submission with progress
+document.getElementById('uploadForm').addEventListener('submit', function(e) {
+    const submitBtn = document.getElementById('submitBtn');
+    const progressDiv = document.getElementById('uploadProgress');
+    
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Uploading...';
+    progressDiv.style.display = 'block';
+    
+    // Simulate progress (in real implementation, use XMLHttpRequest for actual progress)
+    let progress = 0;
+    const progressBar = progressDiv.querySelector('.progress-bar');
+    const progressText = document.getElementById('progressText');
+    
+    const interval = setInterval(() => {
+        progress += Math.random() * 10;
+        if (progress > 90) progress = 90;
+        
+        progressBar.style.width = progress + '%';
+        progressText.textContent = Math.round(progress) + '%';
+    }, 500);
+    
+    // Clear interval after form submission
+    setTimeout(() => {
+        clearInterval(interval);
+        progressBar.style.width = '100%';
+        progressText.textContent = '100%';
+    }, 3000);
+});
+</script>
+{% endblock %}
